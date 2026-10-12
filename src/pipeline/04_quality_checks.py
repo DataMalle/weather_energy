@@ -36,7 +36,14 @@ SELECT COUNT(*) AS rows, MAX(_ingested_at) AS last_ingest,
        MIN(temperature_c) AS tmin, MAX(temperature_c) AS tmax, MIN(wind_ms) AS wmin, MAX(wind_ms) AS wmax
 FROM {p}.silver_weather""").first()
 
+coverage = spark.sql(f"""
+SELECT COALESCE(AVG(CASE WHEN w.ts_utc IS NOT NULL THEN 1.0 ELSE 0.0 END), 0.0) AS c
+FROM (SELECT DISTINCT zone, date_trunc('hour', ts_start) AS h FROM {p}.silver_prices WHERE ts_start <= current_timestamp()) pr
+LEFT JOIN {p}.silver_weather w ON w.zone = pr.zone AND w.ts_utc = pr.h
+""").first()["c"]
+
 metrics = {
+    "weather_coverage": float(coverage),
     "price_rows": price["rows"], "price_zones": price["zones"], "price_nulls": price["nulls"] or 0,
     "price_dupes": dupes, "price_min": price["pmin"], "price_max": price["pmax"],
     "price_min_zone_latest_end": aware(min_end),

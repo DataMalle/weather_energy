@@ -29,6 +29,8 @@ resources:
       parameters:
         - name: catalog
           default: ${var.catalog}
+        - name: weather_past_days
+          default: "2"
       tasks:
         - task_key: ingest_weather
           notebook_task:

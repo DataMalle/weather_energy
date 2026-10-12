@@ -13,7 +13,7 @@ def good():
         "price_rows": 1000, "price_zones": 4, "price_nulls": 0, "price_dupes": 0,
         "price_min": 0.01, "price_max": 3.2,
         "price_min_zone_latest_end": datetime(2026, 10, 13, 22, 0, tzinfo=timezone.utc),
-        "weather_rows": 288, "weather_latest_ingest": NOW - timedelta(hours=1),
+        "weather_rows": 288, "weather_coverage": 1.0, "weather_latest_ingest": NOW - timedelta(hours=1),
         "temp_min": -3.0, "temp_max": 14.0, "wind_min": 0.0, "wind_max": 12.0,
     }
 
@@ -40,6 +40,11 @@ def test_duplicates_are_critical():
 def test_stale_prices_only_warn():
     m = good() | {"price_min_zone_latest_end": datetime(2026, 10, 11, 22, 0, tzinfo=timezone.utc)}
     r = by_name(run_quality_checks(m, now=NOW))["prices_cover_today"]
+    assert not r["passed"] and r["severity"] == "warn"
+
+
+def test_short_weather_history_warns():
+    r = by_name(run_quality_checks(good() | {"weather_coverage": 0.19}, now=NOW))["weather_covers_price_history"]
     assert not r["passed"] and r["severity"] == "warn"
 
 

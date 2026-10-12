@@ -85,6 +85,12 @@ def run_quality_checks(m: dict, now: datetime | None = None) -> list[dict]:
             f"temp {m['temp_min']}..{m['temp_max']} C, vind {m['wind_min']}..{m['wind_max']} m/s",
         ),
         check(
+            "weather_covers_price_history",
+            "warn",
+            m["weather_coverage"] >= 0.95,
+            f"{m['weather_coverage']:.0%} av pristimmarna har väderdata (krav 95%)",
+        ),
+        check(
             "weather_recently_ingested",
             "warn",
             m["weather_latest_ingest"] is not None and now - m["weather_latest_ingest"] <= timedelta(hours=6),
