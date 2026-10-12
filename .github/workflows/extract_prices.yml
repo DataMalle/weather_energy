@@ -1,0 +1,25 @@
+name: Hämta elpriser
+
+on:
+  schedule:
+    - cron: "5 */3 * * *"   # var tredje timme, 15 minuter före Databricks-jobbet
+  workflow_dispatch:
+    inputs:
+      days_back:
+        description: Antal dagar bakåt att hämta (använd 14 för första laddningen)
+        default: "1"
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install databricks-sdk
+      - run: python extract/fetch_prices.py --days-back "${{ inputs.days_back || '1' }}"
