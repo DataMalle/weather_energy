@@ -1,6 +1,6 @@
 # Elpris & väder – Malvin Portfolio Project
 
-**Live demo:** _(länk läggs till efter deploy)_
+**Live demo:** https://elpris-vader-malvin.streamlit.app/
 
 En live data pipeline i Databricks som var tredje timme hämtar **elpriser** och **väder** för Sveriges fyra elområden
 (SE1–SE4), kvalitetskontrollerar datat och visar det i en publik Streamlit-app. Frågan appen svarar på:
