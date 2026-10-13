@@ -14,8 +14,7 @@ MAGENTA = "#d10e61"
 
 _CSS = f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
-html, body, .stApp, button, input, textarea {{ font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif !important; }}
+html, body, .stApp, button, input, textarea {{ font-family: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace !important; }}
 .stApp {{ background: {GRAY_100}; color: {GRAY_900}; }}
 .block-container {{ padding-top: 1.5rem; max-width: 1180px; }}
 header[data-testid="stHeader"] {{ background: transparent; }}
@@ -37,7 +36,9 @@ h3 {{ font-size: 1.15rem; }}
     box-shadow: 0 0 2px rgba(0,0,0,.12), 0 0 20px rgba(0,0,0,.06); }}
 [class*="st-key-card_"] {{ padding: 8px 12px; }}
 [data-testid="stMetric"] {{ padding: 16px 18px; }}
-[data-testid="stMetricLabel"] p {{ color: {GRAY_500}; font-weight: 600; font-size: 14px; }}
+[data-testid="stMetricLabel"] p {{ color: {GRAY_500}; font-weight: 500; font-size: 13px; white-space: normal !important;
+                                   overflow: visible !important; text-overflow: clip !important; line-height: 1.3; }}
+[data-testid="stMetricLabel"] {{ min-height: 2.6em; align-items: flex-start; }}
 [data-testid="stMetricValue"] {{ color: {GRAY_900}; font-weight: 800; font-size: 1.7rem; }}
 [data-testid="stMetricValue"] > div {{ text-overflow: clip; overflow: visible; white-space: nowrap; }}
 

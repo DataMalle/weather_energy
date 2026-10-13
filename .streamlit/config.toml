@@ -4,8 +4,23 @@ primaryColor = "#157b93"
 backgroundColor = "#ffffff"
 secondaryBackgroundColor = "#e6e6e6"
 textColor = "#444444"
-font = "sans serif"
+font = "IBM Plex Mono"
 baseRadius = "medium"
+
+[[theme.fontFaces]]
+family = "IBM Plex Mono"
+url = "https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.1.0/files/ibm-plex-mono-latin-400-normal.woff2"
+weight = 400
+
+[[theme.fontFaces]]
+family = "IBM Plex Mono"
+url = "https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.1.0/files/ibm-plex-mono-latin-500-normal.woff2"
+weight = 500
+
+[[theme.fontFaces]]
+family = "IBM Plex Mono"
+url = "https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.1.0/files/ibm-plex-mono-latin-700-normal.woff2"
+weight = 700
 
 [client]
 toolbarMode = "minimal"
