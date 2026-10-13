@@ -1,4 +1,4 @@
-# Elpris & väder – Malvin Portfolio Project
+# Elpris & väder. En live portfolio
 
 **Live demo:** https://elpris-vader-malvin.streamlit.app/
 
@@ -24,7 +24,7 @@ flowchart LR
 ## Designbeslut
 
 - **Två ingestmönster.** Väder hämtas direkt av Databricks (pull). Elpris-API:et är blockerat från Databricks Free Edition
-  (jag testade utgående trafik till flera domäner), så ett schemalagt **GitHub Actions**-jobb hämtar priserna och
+  , så ett schemalagt **GitHub Actions**-jobb hämtar priserna och
   laddar upp dem till en Unity Catalog-volym (push). `COPY INTO` läser bara in nya filer, så pipelinen är idempotent.
 - **Medallion med MERGE.** Bronze är append-only med `_ingested_at`. Silver deduplicerar och upsertar (senast hämtade värdet
   vinner), så omkörningar och överlappande hämtningar ger samma resultat.
