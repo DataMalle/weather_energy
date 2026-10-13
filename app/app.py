@@ -8,6 +8,8 @@ import streamlit as st
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.sql import StatementState
 
+from style import GRAY_500, TEAL, hero, inject_style
+
 st.set_page_config(page_title="Elpris & väder - Malvin Portfolio Project", page_icon="⚡", layout="wide")
 
 # Streamlit Community Cloud: lägg secrets i miljön så att Databricks-SDK:t hittar dem.
@@ -87,10 +89,11 @@ def minutes_ago(ts) -> str:
     return f"{mins} min sedan" if mins < 120 else f"{mins // 60} h sedan"
 
 
-st.title("⚡ Elpris & väder - Malvin Portfolio Project")
-st.caption(
-    "Live-pipeline i Databricks: elpriser (via GitHub Actions) och väder (Open-Meteo) för de fyra svenska elområdena. "
-    "Uppdateras var tredje timme."
+inject_style()
+hero(
+    "Elpris &amp; väder",
+    "Malvin Portfolio Project · Live-pipeline i Databricks med elpriser och väder för Sveriges fyra elområden",
+    "Live · uppdateras var tredje timme",
 )
 
 try:
@@ -124,7 +127,7 @@ hourly["price_ore"] = hourly["price_sek_kwh"] * 100
 tab_overview, tab_pipeline = st.tabs(["📈 Översikt", "🛠️ Pipeline & datakvalitet"])
 
 with tab_overview:
-    zone = st.radio("Elområde", list(ZONES), format_func=lambda z: f"{z} {ZONES[z]}", horizontal=True)
+    zone = st.pills("Elområde", list(ZONES), default="SE3", format_func=lambda z: f"{z} {ZONES[z]}", label_visibility="collapsed") or "SE3"
     z = hourly[hourly["zone"] == zone]
     now_utc = pd.Timestamp.now(tz="UTC")
     today_local = datetime.now(STHLM).date()
@@ -133,20 +136,22 @@ with tab_overview:
     current = past.iloc[-1] if not past.empty else z.iloc[0]
     today_rows = z[z["hour_local"].dt.date == today_local]
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Pris just nu", f"{current['price_ore']:.0f} öre/kWh")
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Pris just nu, per kWh", f"{current['price_ore']:.0f} öre")
     if not today_rows.empty:
-        c2.metric("Medel idag", f"{today_rows['price_ore'].mean():.0f} öre/kWh")
         cheapest_today = today_rows.loc[today_rows["price_ore"].idxmin()]
-        c3.metric("Billigast idag", f"kl {cheapest_today['hour_local']:%H}:00", f"{cheapest_today['price_ore']:.0f} öre/kWh")
-    c4.metric(f"Väder i {ZONES[zone]}", f"{current['temperature_c']:.1f} °C", f"vind {current['wind_ms']:.1f} m/s", delta_color="off")
+        c2.metric("Medel idag, per kWh", f"{today_rows['price_ore'].mean():.0f} öre")
+        c3.metric(f"Billigast idag, kl {cheapest_today['hour_local']:%H}:00", f"{cheapest_today['price_ore']:.0f} öre")
+    c4.metric(f"Temperatur, {ZONES[zone]}", f"{current['temperature_c']:.1f} °C")
+    c5.metric(f"Vind, {ZONES[zone]}", f"{current['wind_ms']:.1f} m/s")
 
-    st.subheader("Elpris, senaste dagarna och imorgon")
-    window = z[z["hour_local"] >= pd.Timestamp(today_local) - pd.Timedelta(days=2)]
-    st.line_chart(window.set_index("hour_local")["price_ore"], y_label="öre/kWh", x_label="")
+    with st.container(border=True, key="card_price"):
+        st.subheader("Elpris, senaste dagarna och imorgon")
+        window = z[z["hour_local"] >= pd.Timestamp(today_local) - pd.Timedelta(days=2)]
+        st.line_chart(window.set_index("hour_local")["price_ore"], y_label="öre/kWh", x_label="", color=TEAL)
 
     left, right = st.columns(2)
-    with left:
+    with left, st.container(border=True, key="card_cheapest"):
         st.subheader("Billigaste timmarna, kommande dygn")
         ch = cheapest[cheapest["zone"] == zone].copy()
         if ch.empty:
@@ -155,16 +160,17 @@ with tab_overview:
             ch["Tid"] = to_local_naive(ch["hour_local"]).dt.strftime("%a %H:00")
             ch["Pris (öre/kWh)"] = (ch["price_sek_kwh"] * 100).round(0).astype(int)
             st.dataframe(ch[["price_rank", "Tid", "Pris (öre/kWh)"]].rename(columns={"price_rank": "#"}), hide_index=True, width="stretch")
-    with right:
+    with right, st.container(border=True, key="card_scatter"):
         st.subheader("Blåser det mycket, blir det billigare?")
-        st.scatter_chart(z.dropna(subset=["wind_ms"]), x="wind_ms", y="price_ore", x_label="vind (m/s)", y_label="öre/kWh")
+        st.scatter_chart(z.dropna(subset=["wind_ms"]), x="wind_ms", y="price_ore", x_label="vind (m/s)", y_label="öre/kWh", color=TEAL)
 
-    st.subheader("Samband mellan väder och pris per elområde")
-    st.caption("Korrelation (−1 till 1) över all inladdad historik. Negativt värde betyder lägre pris när det blåser mer/är varmare.")
-    cc = corr.set_index("zone")[["corr_wind_price", "corr_temp_price"]].rename(
-        columns={"corr_wind_price": "vind och pris", "corr_temp_price": "temperatur och pris"}
-    )
-    st.bar_chart(cc)
+    with st.container(border=True, key="card_corr"):
+        st.subheader("Samband mellan väder och pris per elområde")
+        st.caption("Korrelation (−1 till 1) över all inladdad historik. Negativt värde betyder lägre pris när det blåser mer/är varmare.")
+        cc = corr.set_index("zone")[["corr_wind_price", "corr_temp_price"]].rename(
+            columns={"corr_wind_price": "vind och pris", "corr_temp_price": "temperatur och pris"}
+        )
+        st.bar_chart(cc, color=[TEAL, GRAY_500], stack=False)
 
 with tab_pipeline:
     st.subheader("Datafärskhet")

@@ -4,3 +4,4 @@ __pycache__/
 out/
 **/.streamlit/secrets.toml
 .local/
+.claude/
