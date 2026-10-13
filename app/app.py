@@ -1,4 +1,5 @@
 import os
+import time
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -35,13 +36,36 @@ def client() -> WorkspaceClient:
     return WorkspaceClient()
 
 
+_DONE = {StatementState.SUCCEEDED, StatementState.FAILED, StatementState.CANCELED, StatementState.CLOSED}
+
+
+def _execute(sql: str, max_wait_s: int = 240):
+    """Kör SQL och väntar klart, även om warehouse måste startas först (kan ta flera minuter)."""
+    api = client().statement_execution
+    res = api.execute_statement(statement=sql, warehouse_id=WAREHOUSE_ID, catalog=CATALOG, wait_timeout="30s")
+    deadline = time.monotonic() + max_wait_s
+    while res.status.state not in _DONE:
+        if time.monotonic() > deadline:
+            raise TimeoutError("Databricks SQL warehouse startade inte i tid")
+        time.sleep(2)
+        res = api.get_statement(res.statement_id)
+    return res
+
+
 @st.cache_data(ttl=600, show_spinner=False)
 def query(sql: str) -> pd.DataFrame:
-    res = client().statement_execution.execute_statement(
-        statement=sql, warehouse_id=WAREHOUSE_ID, catalog=CATALOG, wait_timeout="50s"
-    )
-    if res.status.state != StatementState.SUCCEEDED:
-        raise RuntimeError(res.status.error.message if res.status.error else str(res.status.state))
+    last: Exception | None = None
+    for attempt in range(3):  # tåla tillfälliga fel vid kallstart
+        try:
+            res = _execute(sql)
+            if res.status.state == StatementState.SUCCEEDED:
+                break
+            last = RuntimeError(res.status.error.message if res.status.error else str(res.status.state))
+        except Exception as e:  # noqa: BLE001
+            last = e
+        time.sleep(3 * (attempt + 1))
+    else:
+        raise last
     cols = [c.name for c in res.manifest.schema.columns]
     rows = res.result.data_array if res.result and res.result.data_array else []
     df = pd.DataFrame(rows, columns=cols)
@@ -70,7 +94,8 @@ st.caption(
 )
 
 try:
-    with st.spinner("Hämtar data från Databricks (kan ta en stund om warehouse sover)..."):
+    with st.spinner("Hämtar data från Databricks (kan ta upp till någon minut om warehouse sover)..."):
+        query("SELECT 1")  # väcker warehouse först, så att övriga frågor går snabbt
         hourly = query(f"SELECT * FROM {G}.gold_hourly ORDER BY zone, hour_utc")
         daily = query(f"SELECT * FROM {G}.gold_daily ORDER BY zone, day_local")
         cheapest = query(f"SELECT * FROM {G}.gold_cheapest_next WHERE price_rank <= 5 ORDER BY zone, price_rank")
@@ -83,6 +108,9 @@ try:
         )
 except Exception as e:  # noqa: BLE001 - visa fel för besökaren
     st.error(f"Kunde inte hämta data just nu: {e}")
+    if st.button("Försök igen"):
+        st.cache_data.clear()
+        st.rerun()
     st.stop()
 
 if hourly.empty:
