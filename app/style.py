@@ -39,8 +39,8 @@ h3 {{ font-size: 1.15rem; }}
 [data-testid="stMetricLabel"] p {{ color: {GRAY_500}; font-weight: 500; font-size: 13px; white-space: normal !important;
                                    overflow: visible !important; text-overflow: clip !important; line-height: 1.3; }}
 [data-testid="stMetricLabel"] {{ min-height: 2.6em; align-items: flex-start; }}
-[data-testid="stMetricValue"] {{ color: {GRAY_900}; font-weight: 800; font-size: 1.7rem; }}
-[data-testid="stMetricValue"] > div {{ text-overflow: clip; overflow: visible; white-space: nowrap; }}
+[data-testid="stMetricValue"] {{ color: {GRAY_900}; font-weight: 800; font-size: clamp(1.15rem, 2.1vw, 1.7rem); }}
+[data-testid="stMetricValue"] > div {{ text-overflow: clip; overflow: visible; white-space: normal; overflow-wrap: anywhere; }}
 
 button[data-baseweb="tab"] {{ font-weight: 700; color: {GRAY_500}; }}
 button[data-baseweb="tab"][aria-selected="true"] {{ color: {GRAY_900}; }}
